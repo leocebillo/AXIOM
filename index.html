@@ -282,21 +282,36 @@
     const password = document.getElementById("liPassword").value;
     const btn = document.getElementById("liBtn");
     btn.disabled = true;
+
+    let cred;
     try {
-      const cred = await signInWithEmailAndPassword(auth, usernameToEmail(username), password);
-      const snap = await getDoc(doc(db, "users", cred.user.uid));
-      const tier = snap.exists() ? snap.data().tier : 1;
-      fb.textContent = "Welcome back, " + username + ". Taking you to the Archive...";
-      fb.className = "feedback ok";
-      showTier(tier);
-      setProgress(100);
-      setTimeout(() => { window.location.href = "archive.html"; }, 1400);
+      cred = await signInWithEmailAndPassword(auth, usernameToEmail(username), password);
     } catch (err) {
-      fb.textContent = "No match in the log.";
+      console.error("Sign-in failed:", err.code, err.message);
+      fb.textContent = (err.code === "auth/wrong-password" || err.code === "auth/user-not-found" || err.code === "auth/invalid-credential")
+        ? "No match in the log."
+        : "Sign-in error (" + err.code + ") — check the console for details.";
       fb.className = "feedback err";
-    } finally {
       btn.disabled = false;
+      return;
     }
+
+    // Signed in successfully — a Firestore read problem past this point
+    // shouldn't be reported as a bad login.
+    let tier = 1;
+    try {
+      const snap = await getDoc(doc(db, "users", cred.user.uid));
+      if (snap.exists()) tier = snap.data().tier;
+    } catch (err) {
+      console.warn("Signed in, but couldn't read tier from Firestore:", err.code, err.message);
+    }
+
+    fb.textContent = "Welcome back, " + username + ". Taking you to the Archive...";
+    fb.className = "feedback ok";
+    showTier(tier);
+    setProgress(100);
+    btn.disabled = false;
+    setTimeout(() => { window.location.href = "archive.html"; }, 1400);
   });
 
   document.getElementById("logoutBtn")?.addEventListener("click", async () => {
