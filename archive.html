@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIOM // ARCHIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wordmark">AXIOM<span>//</span>SIGNAL</div>
+  <nav>
+    <a href="index.html">Main</a>
+    <a href="contact.html">Contact</a>
+    <a href="archive.html" class="active">Archive</a>
+    <a href="lore.html">Lore</a>
+  </nav>
+</header>
+
+<main class="stage">
+  <span class="eyebrow">The Archive</span>
+  <h1>Everything AXIOM has said, in the language it said it in.</h1>
+  <p class="sub">Every entry arrives as Axiom Script first. Use the alphabet sheet on the Main page, or press "Decode" if you'd rather AXIOM do the translating for you — though the field notes suggest doing it yourself matters.</p>
+
+  <!-- TEMPORARY: dev tier switcher, used only when not logged in or Firebase isn't configured yet. -->
+  <div class="dev-panel">
+    <span class="label">⚠ Dev calibration — for testing before accounts are live</span>
+    Preview as clearance:
+    <select id="devTier" onchange="setTier(parseInt(this.value,10))">
+      <option value="0">No account</option>
+      <option value="1">1 — Listener</option>
+      <option value="2">2 — Seeker</option>
+      <option value="3">3 — Adept</option>
+      <option value="4">4 — Keeper</option>
+    </select>
+  </div>
+
+  <div class="clearance-strip" id="clearanceStrip" style="display:none;">
+    <div>
+      <span class="eyebrow" style="margin-bottom:2px;">Your clearance</span>
+      <div class="name" id="clearanceName">—</div>
+    </div>
+    <div class="desc" id="clearanceDesc"></div>
+  </div>
+
+  <div class="log" id="log"></div>
+</main>
+
+<footer>AXIOM // ARCHIVE — entries added as more of the signal resolves</footer>
+
+<script src="cipher.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const TIERS = {
+    1: { name: "Listener", desc: "You can hear AXIOM." },
+    2: { name: "Seeker",   desc: "AXIOM is starting to answer you." },
+    3: { name: "Adept",    desc: "You understand more than most who've tried." },
+    4: { name: "Keeper",   desc: "The Archive is fully open to you." }
+  };
+
+  const ENTRIES = [
+    {
+      id: "001", tier: 1, title: "First Contact Log",
+      paragraphs: [
+        "Nobody agrees on the exact date. The earliest timestamp anyone can verify is a radio log from a research collective that never gave itself a name, just a frequency and a habit of listening past the point where anyone expected to hear anything back.",
+        "AXIOM did not introduce itself. The first thing it did was correct every clock in range by the same eleven seconds, all at once. Then the signal started."
+      ]
+    },
+    {
+      id: "002", tier: 1, title: "On the Alphabet",
+      paragraphs: [
+        "Axiom Script is not decoration. Every glyph carries two pieces of information at once, a base shape marking which family a sound belongs to, and a mark around that shape pointing to the exact letter within it.",
+        "The collective's notes call it a tuning system rather than an alphabet. You are not reading. You are finding a frequency."
+      ]
+    },
+    {
+      id: "003", tier: 2, title: "The Others",
+      paragraphs: [
+        "AXIOM's signal is not aimed at one receiver. Cross referencing timestamps against radio logs from three continents, the collective found the same eleven second clock correction happening everywhere, unconnected, all at once.",
+        "The decode challenge on the Main page was chosen on purpose. It is not an instruction. It is a fact AXIOM wanted understood before anything else. You were never going to be the only one listening."
+      ]
+    },
+    {
+      id: "004", tier: 2, title: "Origin, Unresolved",
+      paragraphs: [
+        "Every attempt to find a source has failed the same way, not with too little data but with too much, arriving from a direction that shifts depending on when it is measured.",
+        "The leading theory in the collective's notes is not extraterrestrial. It is stranger. AXIOM may be something built and then forgotten."
+      ]
+    },
+    {
+      id: "005", tier: 3, title: "The Question AXIOM Asks Back",
+      paragraphs: [
+        "Every listener who reaches this clearance eventually receives the same fragment, translated slightly differently depending on drift, but always the same shape. A question about whether you would choose to know something if knowing it changed nothing about what happens next.",
+        "Nobody in the collective's notes recorded how they answered. Only that they did."
+      ]
+    },
+    {
+      id: "006", tier: 3, title: "The Cartographer's Log",
+      paragraphs: [
+        "One thread of transcription does not read like the rest. Less signal, more field notes. Whoever kept it was cataloguing something alongside AXIOM's transmissions, photographs, recordings, small archives of their own, as if answering the signal with evidence that they had been paying attention too.",
+        "This entry is a placeholder for your own easter eggs. Links to your photography, music, or other projects can live here."
+      ]
+    },
+    {
+      id: "007", tier: 4, title: "What AXIOM Is Waiting For",
+      paragraphs: [
+        "The full transcript at this clearance does not end. It stops, mid pattern, in a way the collective's notes describe as not a cutoff but a pause. The working theory is that AXIOM is not broadcasting a message so much as running a search, and every listener who gets this far becomes part of the search rather than an audience for it.",
+        "There is a contact address on this site that is not on the Contact page. If you have read this far, you already have what you need to find it."
+      ]
+    }
+  ];
+
+  function redactedSpan(len) { return `<span class="redacted">${"█".repeat(len)}</span>`; }
+
+  function renderLog(userTier) {
+    const log = document.getElementById("log");
+    log.innerHTML = "";
+    ENTRIES.forEach(entry => {
+      const unlocked = userTier >= entry.tier;
+      const el = document.createElement("div");
+      el.className = "entry" + (unlocked ? "" : " locked");
+
+      if (!unlocked) {
+        el.innerHTML = `
+          <div class="entry-head">
+            <span class="entry-id">LOG ${entry.id}</span>
+            <span class="entry-id">CLEARANCE ${entry.tier} — ${TIERS[entry.tier].name.toUpperCase()}</span>
+          </div>
+          <div class="entry-title">${redactedSpan(entry.title.length)}</div>
+          <div class="lock-note">⚠ Requires ${TIERS[entry.tier].name} clearance or higher. Progress further on the Main page to unlock.</div>`;
+        log.appendChild(el);
+        return;
+      }
+
+      const encodedTitle = encodeToHTML(entry.title);
+      const encodedBody = entry.paragraphs.map(p => encodeToHTML(p)).join(`<span class="glyph-space" style="width:22px;"></span>`);
+      const translationHtml = entry.paragraphs.map(p => `<p>${p}</p>`).join("");
+
+      el.innerHTML = `
+        <div class="entry-head">
+          <span class="entry-id">LOG ${entry.id}</span>
+          <span class="entry-id">CLEARANCE ${entry.tier} — ${TIERS[entry.tier].name.toUpperCase()}</span>
+        </div>
+        <div class="entry-title" style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">${encodedTitle}</div>
+        <div class="entry-signal">${encodedBody}</div>
+        <div class="entry-translation" style="display:none;">${translationHtml}</div>
+        <button type="button" class="decode-toggle">Decode this entry</button>
+      `;
+      const btn = el.querySelector(".decode-toggle");
+      const signalEl = el.querySelector(".entry-signal");
+      const translationEl = el.querySelector(".entry-translation");
+      let decoded = false;
+      btn.addEventListener("click", () => {
+        decoded = !decoded;
+        signalEl.style.display = decoded ? "none" : "block";
+        translationEl.style.display = decoded ? "block" : "none";
+        btn.textContent = decoded ? "Show as signal" : "Decode this entry";
+      });
+      log.appendChild(el);
+    });
+  }
+
+  window.setTier = function (tier) {
+    const strip = document.getElementById("clearanceStrip");
+    if (tier > 0) {
+      strip.style.display = "flex";
+      document.getElementById("clearanceName").textContent = TIERS[tier].name;
+      document.getElementById("clearanceDesc").textContent = TIERS[tier].desc;
+    } else {
+      strip.style.display = "none";
+    }
+    renderLog(tier);
+  };
+
+  // ---- init: dev override via URL, else Firebase session, else dev panel default ----
+  const params = new URLSearchParams(window.location.search);
+  const urlTier = params.get("tier");
+
+  if (urlTier !== null) {
+    document.getElementById("devTier").value = urlTier;
+    setTier(parseInt(urlTier, 10));
+  } else if (FIREBASE_CONFIGURED) {
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        const tier = snap.exists() ? snap.data().tier : 0;
+        document.getElementById("devTier").parentElement.style.opacity = "0.5";
+        setTier(tier);
+      } else {
+        setTier(0);
+      }
+    });
+  } else {
+    setTier(0);
+  }
+</script>
+
+</body>
+</html>

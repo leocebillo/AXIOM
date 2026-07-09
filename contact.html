@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIOM // CONTACT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wordmark">AXIOM<span>//</span>SIGNAL</div>
+  <nav>
+    <a href="index.html">Main</a>
+    <a href="contact.html" class="active">Contact</a>
+    <a href="archive.html">Archive</a>
+    <a href="lore.html">Lore</a>
+  </nav>
+</header>
+
+<main class="stage">
+  <span class="eyebrow">Open Channel</span>
+  <h1>One line stays open. Whoever's keeping this log actually reads it.</h1>
+  <p class="sub">Questions about the signal, the log, or anything else — this is the way through.</p>
+
+  <p class="note">Not every frequency on this site is listed here. That's not an oversight.</p>
+
+  <div class="channel">
+    <span class="channel-label">Transmit on</span>
+    <div class="channel-address">the open channel</div>
+    <p class="channel-desc">Leave a message. Whoever's keeping this log reads every transmission that comes through.</p>
+
+    <form id="contactForm" action="https://formspree.io/f/xlgyypgo" method="POST">
+      <div class="field">
+        <label for="cf-name">Name</label>
+        <input type="text" id="cf-name" name="name" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="cf-email">Reply-to address</label>
+        <input type="email" id="cf-email" name="_replyto" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="cf-message">Message</label>
+        <textarea id="cf-message" name="message" required></textarea>
+      </div>
+      <!-- honeypot field, keep hidden -->
+      <input type="text" name="_gotcha" class="hp" tabindex="-1" autocomplete="off">
+
+      <button type="submit" class="send-btn" id="cf-submit">Send transmission</button>
+      <div class="form-feedback" id="cf-feedback"></div>
+    </form>
+
+    <div class="signal-status"><span class="signal-dot"></span>Channel open — response time varies with signal strength</div>
+  </div>
+</main>
+
+<footer>AXIOM // SIGNAL — logged and maintained by whoever's still listening</footer>
+
+<script>
+  const form = document.getElementById("contactForm");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("cf-submit");
+    const fb = document.getElementById("cf-feedback");
+    btn.disabled = true;
+    fb.textContent = "Transmitting...";
+    fb.className = "form-feedback";
+    try {
+      const res = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { "Accept": "application/json" }
+      });
+      if (res.ok) {
+        fb.textContent = "Received. AXIOM logs the timestamp; the person behind it reads it soon after.";
+        fb.className = "form-feedback ok";
+        form.reset();
+      } else {
+        const data = await res.json().catch(() => null);
+        fb.textContent = (data && data.errors) ? data.errors.map(x => x.message).join(", ") : "Transmission failed — try again in a moment.";
+        fb.className = "form-feedback err";
+      }
+    } catch (err) {
+      fb.textContent = "Transmission failed — check your connection and try again.";
+      fb.className = "form-feedback err";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

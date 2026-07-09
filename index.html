@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIOM // INTERCEPTED SIGNAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wordmark">AXIOM<span>//</span>SIGNAL</div>
+  <nav>
+    <a href="index.html">Main</a>
+    <a href="contact.html">Contact</a>
+    <a href="archive.html">Archive</a>
+    <a href="lore.html">Lore</a>
+  </nav>
+</header>
+
+<div class="meter-wrap">
+  <div class="meter-label"><span>SIGNAL LOCK</span><span id="meterPct">0%</span></div>
+  <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+</div>
+
+<main class="stage">
+
+  <div class="term">
+    <div class="term-dot-row">
+      <div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div>
+    </div>
+    <div class="term-line" style="animation-delay:0.1s">&gt; incoming transmission detected // source: unknown</div>
+    <div class="term-line" style="animation-delay:0.6s">&gt; origin distance: unresolved</div>
+    <div class="term-line" style="animation-delay:1.1s">&gt; designation assigned: AXIOM</div>
+    <div class="term-line cyan" style="animation-delay:1.6s">&gt; AXIOM has been transmitting for longer than we've been listening.</div>
+
+    <span class="eyebrow" style="margin-top:24px;">Stage 01 — Access</span>
+    <h1>Before AXIOM will speak in a tongue you can read, it wants to know if you can wait for it.</h1>
+
+    <p class="note">Whoever logged this first left a warning here: don't answer out loud near a live mic. Make of that what you will.</p>
+
+    <div class="riddle-box">
+      <p class="riddle-text">"What comes before the first word, and remains after the last?"</p>
+      <form class="answer-row" id="riddleForm">
+        <input type="text" id="riddleInput" placeholder="Your answer" autocomplete="off" aria-label="Mini mystery answer">
+        <button type="submit">Submit</button>
+      </form>
+      <div class="feedback" id="riddleFeedback"></div>
+    </div>
+  </div>
+
+  <!-- STAGE 2: ALPHABET SHEET + THE REAL RIDDLE, IN AXIOM SCRIPT -->
+  <section class="stage-block hidden-lock" id="stage2">
+    <span class="eyebrow">Stage 02 — Axiom Script</span>
+    <h1 style="font-size:24px;">The alphabet AXIOM speaks in.</h1>
+    <p class="note">Someone's pencil note in the margin of the original printout: "The shape tells you the family. The mark tells you the letter. It's not writing, it's tuning."</p>
+    <div class="glyph-grid" id="glyphGrid"></div>
+
+    <span class="eyebrow" style="margin-top:34px;">Stage 03 — The Question, Properly Asked</span>
+    <h1 style="font-size:22px;">AXIOM already asked you something. Now you can finally read it.</h1>
+    <div class="transmission" id="riddleGlyphs"></div>
+    <form class="answer-row" id="riddleDecodeForm">
+      <input type="text" id="riddleDecodeInput" placeholder="Type the decoded answer" autocomplete="off" aria-label="Decoded riddle answer">
+      <button type="submit">Decode</button>
+    </form>
+    <div class="feedback" id="riddleDecodeFeedback"></div>
+  </section>
+
+  <!-- STAGE 3: DECODE THE TRANSMISSION -->
+  <section class="stage-block hidden-lock" id="stage3">
+    <span class="eyebrow">Stage 04 — Decode</span>
+    <h1 style="font-size:22px;">A fragment of the transmission, waiting to be read.</h1>
+    <div class="transmission" id="cipherOutput"></div>
+    <form class="answer-row" id="decodeForm">
+      <input type="text" id="decodeInput" placeholder="Type the decoded phrase" autocomplete="off" aria-label="Decoded phrase">
+      <button type="submit">Decode</button>
+    </form>
+    <div class="feedback" id="decodeFeedback"></div>
+  </section>
+
+  <!-- STAGE 4: ACCOUNT -->
+  <section class="stage-block hidden-lock" id="stage4">
+    <span class="eyebrow">Stage 05 — Registration</span>
+    <h1 style="font-size:24px;">You're not the first to get this far. You won't be the last.</h1>
+    <p class="note">Create a listener profile. AXIOM keeps track of who's paying attention.</p>
+
+    <div id="configWarning" class="config-warning" style="display:none;">
+      ⚠ Backend not connected yet. Accounts won't save until Firebase config is added — see README.md.
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabSignup" onclick="switchTab('signup')" type="button">Create profile</button>
+      <button class="tab" id="tabLogin" onclick="switchTab('login')" type="button">I already have one</button>
+    </div>
+
+    <form class="auth-form active" id="signupForm">
+      <input type="text" id="suUsername" placeholder="Choose a listener name" required>
+      <input type="password" id="suPassword" placeholder="Choose a passphrase (6+ characters)" required minlength="6">
+      <button type="submit" id="suBtn">Register as Listener</button>
+    </form>
+    <form class="auth-form" id="loginForm">
+      <input type="text" id="liUsername" placeholder="Listener name" required>
+      <input type="password" id="liPassword" placeholder="Passphrase" required>
+      <button type="submit" id="liBtn">Log in</button>
+    </form>
+    <div class="feedback" id="authFeedback"></div>
+
+    <div class="tier-card" id="tierCard" style="display:none;">
+      <span class="eyebrow" style="margin-bottom:4px;">Current clearance</span>
+      <div class="tier-name" id="tierName">Listener</div>
+      <div class="tier-desc" id="tierDesc">You can hear AXIOM. You can't yet ask it anything.</div>
+      <button type="button" id="logoutBtn" class="tab" style="margin-top:14px;">Log out</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>AXIOM // SIGNAL — logged and maintained by whoever's still listening</footer>
+
+<script src="cipher.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  let auth, db;
+  if (FIREBASE_CONFIGURED) {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } else {
+    document.getElementById("configWarning").style.display = "block";
+  }
+
+  // Firebase Auth needs an email-shaped identifier. Listener names get
+  // mapped to a fake address under a dummy domain — the username is
+  // what's shown anywhere in the UI, this is just plumbing.
+  function usernameToEmail(username) {
+    const clean = username.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return clean + "@axiom.local";
+  }
+
+  const TIERS = {
+    1: { name: "Listener", desc: "You can hear AXIOM. You can't yet ask it anything." },
+    2: { name: "Seeker",   desc: "You've asked. AXIOM is starting to answer." },
+    3: { name: "Adept",    desc: "You understand more of the signal than most who've tried." },
+    4: { name: "Keeper",   desc: "The Archive is open to you." }
+  };
+  function showTier(level) {
+    const t = TIERS[level] || TIERS[1];
+    document.getElementById("tierName").textContent = t.name;
+    document.getElementById("tierDesc").textContent = t.desc;
+    document.getElementById("tierCard").style.display = "block";
+  }
+
+  // ---- render the alphabet sheet ----
+  const grid = document.getElementById("glyphGrid");
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(letter => {
+    const cell = document.createElement("div");
+    cell.className = "glyph-cell";
+    cell.innerHTML = `${glyphMarkup(letter)}<span class="l">${letter}</span>`;
+    grid.appendChild(cell);
+  });
+
+  // ---- the real riddle, now shown only in Axiom Script ----
+  const RIDDLE_PLAIN = "I CROSS THE DARK BETWEEN THE STARS WITHOUT A BODY. I CARRY NO FUEL, YET I NEVER STOP. BREAK ME APART, AND I AM ONLY NOISE. WHAT AM I?";
+  document.getElementById("riddleGlyphs").innerHTML = encodeToHTML(RIDDLE_PLAIN);
+
+  // ---- the hidden transmission to decode ----
+  const TRANSMISSION_PLAIN = "FIND THE OTHERS";
+  document.getElementById("cipherOutput").innerHTML = encodeToHTML(TRANSMISSION_PLAIN);
+
+  // ---- progress / signal meter ----
+  function setProgress(pct) {
+    document.getElementById("meterFill").style.width = pct + "%";
+    document.getElementById("meterPct").textContent = pct + "%";
+  }
+
+  // ---- Stage 1: mini mystery, unlocks the alphabet ----
+  const MINI_MYSTERY_ANSWER = "silence";
+  document.getElementById("riddleForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const val = document.getElementById("riddleInput").value.trim().toLowerCase();
+    const fb = document.getElementById("riddleFeedback");
+    if (val === MINI_MYSTERY_ANSWER) {
+      fb.textContent = "Correct. AXIOM shares its alphabet with those who can sit with quiet.";
+      fb.className = "feedback ok";
+      document.getElementById("stage2").classList.remove("hidden-lock");
+      setTimeout(() => document.getElementById("stage2").classList.add("revealed"), 20);
+      setProgress(20);
+    } else {
+      fb.textContent = "Not that. Try again.";
+      fb.className = "feedback err";
+    }
+  });
+
+  // ---- Stage 2: decode the real riddle using the alphabet sheet ----
+  const RIDDLE_ANSWER = "signal";
+  document.getElementById("riddleDecodeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const val = document.getElementById("riddleDecodeInput").value.trim().toLowerCase();
+    const fb = document.getElementById("riddleDecodeFeedback");
+    if (val === RIDDLE_ANSWER) {
+      fb.textContent = "Correct. AXIOM was listening for exactly that.";
+      fb.className = "feedback ok";
+      document.getElementById("stage3").classList.remove("hidden-lock");
+      setTimeout(() => document.getElementById("stage3").classList.add("revealed"), 20);
+      setProgress(50);
+    } else {
+      fb.textContent = "That's not what's crossing the dark. Check each glyph against the sheet.";
+      fb.className = "feedback err";
+    }
+  });
+
+  // ---- Stage 3: decode ----
+  document.getElementById("decodeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const val = document.getElementById("decodeInput").value.trim().toUpperCase();
+    const fb = document.getElementById("decodeFeedback");
+    if (val === TRANSMISSION_PLAIN) {
+      fb.textContent = "Decoded. AXIOM is aware you're listening.";
+      fb.className = "feedback ok";
+      document.getElementById("stage4").classList.remove("hidden-lock");
+      setTimeout(() => document.getElementById("stage4").classList.add("revealed"), 20);
+      setProgress(80);
+    } else {
+      fb.textContent = "Not quite — check each glyph against the sheet above.";
+      fb.className = "feedback err";
+    }
+  });
+
+  // ---- Stage 3: account (real Firebase Auth + Firestore) ----
+  window.switchTab = function (which) {
+    document.getElementById("tabSignup").classList.toggle("active", which === "signup");
+    document.getElementById("tabLogin").classList.toggle("active", which === "login");
+    document.getElementById("signupForm").classList.toggle("active", which === "signup");
+    document.getElementById("loginForm").classList.toggle("active", which === "login");
+  };
+
+  document.getElementById("signupForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const fb = document.getElementById("authFeedback");
+    if (!FIREBASE_CONFIGURED) { fb.textContent = "Backend not connected yet — see README.md."; fb.className = "feedback warn"; return; }
+    const username = document.getElementById("suUsername").value.trim();
+    const password = document.getElementById("suPassword").value;
+    if (!username || password.length < 6) return;
+    const btn = document.getElementById("suBtn");
+    btn.disabled = true;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, usernameToEmail(username), password);
+      await setDoc(doc(db, "users", cred.user.uid), { username, tier: 1, createdAt: Date.now() });
+      fb.textContent = "Profile created. Welcome to the log, " + username + ". Taking you to the Archive...";
+      fb.className = "feedback ok";
+      showTier(1);
+      setProgress(100);
+      setTimeout(() => { window.location.href = "archive.html"; }, 1400);
+    } catch (err) {
+      fb.textContent = err.code === "auth/email-already-in-use"
+        ? "That listener name is already logged."
+        : err.code === "auth/weak-password"
+        ? "Passphrase needs to be at least 6 characters."
+        : "Registration failed: " + err.message;
+      fb.className = "feedback err";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("loginForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const fb = document.getElementById("authFeedback");
+    if (!FIREBASE_CONFIGURED) { fb.textContent = "Backend not connected yet — see README.md."; fb.className = "feedback warn"; return; }
+    const username = document.getElementById("liUsername").value.trim();
+    const password = document.getElementById("liPassword").value;
+    const btn = document.getElementById("liBtn");
+    btn.disabled = true;
+    try {
+      const cred = await signInWithEmailAndPassword(auth, usernameToEmail(username), password);
+      const snap = await getDoc(doc(db, "users", cred.user.uid));
+      const tier = snap.exists() ? snap.data().tier : 1;
+      fb.textContent = "Welcome back, " + username + ". Taking you to the Archive...";
+      fb.className = "feedback ok";
+      showTier(tier);
+      setProgress(100);
+      setTimeout(() => { window.location.href = "archive.html"; }, 1400);
+    } catch (err) {
+      fb.textContent = "No match in the log.";
+      fb.className = "feedback err";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+    if (FIREBASE_CONFIGURED) await signOut(auth);
+    document.getElementById("tierCard").style.display = "none";
+    document.getElementById("authFeedback").textContent = "Logged out.";
+  });
+
+  // Keep a logged-in listener signed in across page loads.
+  if (FIREBASE_CONFIGURED) {
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          ["stage2", "stage3", "stage4"].forEach(id => {
+            document.getElementById(id).classList.remove("hidden-lock");
+            document.getElementById(id).classList.add("revealed");
+          });
+          showTier(snap.data().tier);
+          setProgress(100);
+        }
+      }
+    });
+  }
+
+  // TESTING SHORTCUT — open index.html?dev=1 to skip straight to the
+  // registration form without solving the puzzles. Remove this block
+  // (or just stop using the query param) once you're done testing.
+  if (new URLSearchParams(window.location.search).get("dev") === "1") {
+    ["stage2", "stage3", "stage4"].forEach(id => {
+      document.getElementById(id).classList.remove("hidden-lock");
+      document.getElementById(id).classList.add("revealed");
+    });
+    setProgress(100);
+  }
+</script>
+
+</body>
+</html>

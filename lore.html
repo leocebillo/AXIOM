@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIOM // LORE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wordmark">AXIOM<span>//</span>SIGNAL</div>
+  <nav>
+    <a href="index.html">Main</a>
+    <a href="contact.html">Contact</a>
+    <a href="archive.html">Archive</a>
+    <a href="lore.html" class="active">Lore</a>
+  </nav>
+</header>
+
+<main class="stage">
+  <span class="eyebrow">The Lore</span>
+  <h1>Everything that didn't make it into the official log.</h1>
+  <p class="sub">Some of this fills in on its own as your clearance rises. The rest is only found by whoever bothers to look — solve what's in front of you.</p>
+
+  <!-- TEMPORARY: dev tier switcher, same as Archive, for testing before accounts are live -->
+  <div class="dev-panel">
+    <span class="label">⚠ Dev calibration — for testing before accounts are live</span>
+    Preview as clearance:
+    <select id="devTier" onchange="setDevTier(parseInt(this.value,10))">
+      <option value="0">No account</option>
+      <option value="1">1 — Listener</option>
+      <option value="2">2 — Seeker</option>
+      <option value="3">3 — Adept</option>
+      <option value="4">4 — Keeper</option>
+    </select>
+  </div>
+
+  <div class="fragment-grid" id="fragmentGrid"></div>
+</main>
+
+<footer>AXIOM // LORE — fills in as more gets found</footer>
+
+<script src="cipher.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const TIER_NAMES = { 1: "Listener", 2: "Seeker", 3: "Adept", 4: "Keeper" };
+
+  /* ============================================================
+     LORE FRAGMENTS
+     Two ways a fragment unlocks:
+       - type: "tier"   -> reveals automatically once the logged-in
+                            listener's account tier meets `tier`
+       - type: "puzzle" -> stays locked until solved right here on
+                            the page, no account required. If the
+                            visitor IS logged in, solving it is
+                            saved to their account permanently.
+     Add more fragments by adding objects to this array.
+     ============================================================ */
+  const FRAGMENTS = [
+    {
+      id: "listener-intro",
+      type: "tier", tier: 1,
+      title: "Why This Page Exists",
+      body: [
+        "Not everything AXIOM sends fits neatly into a numbered log entry. Some of it is a half sentence. Some of it is a pattern that only shows up if you're cross referencing three other things at once.",
+        "This page is where that goes. Some of it will find you. Some of it you have to find yourself."
+      ]
+    },
+    {
+      id: "eleven-seconds",
+      type: "puzzle",
+      title: "Eleven Seconds",
+      clue: "\"Every device in range lost the same amount of time, all at once, the moment AXIOM first spoke. Name what vanished.\"",
+      answer: "seconds",
+      body: [
+        "Eleven seconds, gone from every clock in range, all at once, with no explanation anyone's found. Nobody's been able to get them back.",
+        "Somebody in the collective's notes ran the math anyway: eleven seconds a day, every day, since first contact, adds up to more missing time than anyone's comfortable putting a number on out loud."
+      ]
+    },
+    {
+      id: "signal-word",
+      type: "puzzle",
+      title: "A Word, Alone",
+      clue: "SIGNAL_GLYPHS",
+      answer: "listen",
+      body: [
+        "Not every transmission is a sentence. Sometimes it's one word, repeated on a loop, with nothing around it for context.",
+        "The collective's best guess is that it isn't a message at all. It's an instruction, aimed at whoever's new."
+      ]
+    },
+    {
+      id: "cartographer",
+      type: "tier", tier: 3,
+      title: "About the Cartographer",
+      body: [
+        "The Archive references a second set of notes running alongside AXIOM's own, kept by someone who was cataloguing their own work at the same time they were logging the signal.",
+        "If you've made it to Adept clearance, you've earned the context: check Archive Log 006. It's not part of AXIOM's transmission. It's a place for something else entirely."
+      ]
+    },
+    {
+      id: "keeper-secret",
+      type: "tier", tier: 4,
+      title: "What's Left",
+      body: [
+        "Everything above this line was AXIOM talking to whoever was listening. This line is different — a note left by whoever built this site for whoever reaches the end of it.",
+        "There's more coming. Clearance doesn't cap here forever."
+      ]
+    }
+  ];
+
+  let currentTier = 0;
+  let firestoreUnlocked = [];
+  let auth, db, currentUid = null;
+
+  function fragmentUnlocked(f) {
+    if (f.type === "tier") return currentTier >= f.tier;
+    if (f.type === "puzzle") return firestoreUnlocked.includes(f.id) || sessionSolved.has(f.id);
+    return false;
+  }
+
+  const sessionSolved = new Set(); // solved this page-load, even if not logged in
+
+  async function persistSolve(id) {
+    if (!FIREBASE_CONFIGURED || !currentUid) return; // guests: session-only, see README
+    try {
+      await setDoc(doc(db, "users", currentUid), { loreUnlocked: arrayUnion(id) }, { merge: true });
+    } catch (err) {
+      console.warn("Could not save lore progress:", err);
+    }
+  }
+
+  function render() {
+    const grid = document.getElementById("fragmentGrid");
+    grid.innerHTML = "";
+    FRAGMENTS.forEach(f => {
+      const unlocked = fragmentUnlocked(f);
+      const el = document.createElement("div");
+      el.className = "fragment" + (unlocked ? "" : " locked");
+
+      if (unlocked) {
+        el.innerHTML = `
+          <div class="fragment-head">
+            <span class="fragment-tag ${f.type === 'tier' ? 'auto' : 'puzzle'}">${f.type === 'tier' ? 'Auto-logged · ' + TIER_NAMES[f.tier] + ' clearance' : 'Self-found'}</span>
+          </div>
+          <div class="fragment-title">${f.title}</div>
+          <div class="fragment-body">${f.body.map(p => `<p>${p}</p>`).join("")}</div>
+        `;
+        grid.appendChild(el);
+        return;
+      }
+
+      if (f.type === "tier") {
+        el.innerHTML = `
+          <div class="fragment-head">
+            <span class="fragment-tag auto">Auto-logged · requires ${TIER_NAMES[f.tier]} clearance</span>
+          </div>
+          <div class="fragment-title">${"█".repeat(f.title.length)}</div>
+          <div class="fragment-lock-note">⚠ This fills in on its own once your clearance reaches ${TIER_NAMES[f.tier]}.</div>
+        `;
+        grid.appendChild(el);
+        return;
+      }
+
+      // locked puzzle fragment
+      const clueHtml = f.id === "signal-word" ? `<div class="fragment-clue" style="display:flex; gap:6px; flex-wrap:wrap;">${encodeToHTML("LISTEN")}</div>` : `<p class="fragment-clue">${f.clue}</p>`;
+      el.innerHTML = `
+        <div class="fragment-head">
+          <span class="fragment-tag puzzle">Self-found</span>
+        </div>
+        <div class="fragment-title">${"█".repeat(f.title.length)}</div>
+        ${clueHtml}
+        <form class="answer-row" data-fragment="${f.id}">
+          <input type="text" placeholder="Your answer" autocomplete="off" aria-label="Answer for ${f.title}">
+          <button type="submit">Decode</button>
+        </form>
+        <div class="feedback"></div>
+      `;
+      const form = el.querySelector("form");
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        const input = form.querySelector("input");
+        const fb = el.querySelector(".feedback");
+        const val = input.value.trim().toLowerCase();
+        if (val === f.answer) {
+          sessionSolved.add(f.id);
+          fb.textContent = "Logged.";
+          fb.className = "feedback ok";
+          await persistSolve(f.id);
+          render();
+        } else {
+          fb.textContent = "Not quite.";
+          fb.className = "feedback err";
+        }
+      });
+      grid.appendChild(el);
+    });
+  }
+
+  window.setDevTier = function (tier) {
+    currentTier = tier;
+    render();
+  };
+
+  // ---- init ----
+  const params = new URLSearchParams(window.location.search);
+  const urlTier = params.get("tier");
+
+  if (urlTier !== null) {
+    document.getElementById("devTier").value = urlTier;
+    currentTier = parseInt(urlTier, 10);
+    render();
+  } else if (FIREBASE_CONFIGURED) {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        currentUid = user.uid;
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          currentTier = snap.data().tier || 0;
+          firestoreUnlocked = snap.data().loreUnlocked || [];
+        }
+        document.getElementById("devTier").parentElement.style.opacity = "0.5";
+      }
+      render();
+    });
+  } else {
+    render();
+  }
+</script>
+
+</body>
+</html>
