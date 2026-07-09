@@ -8,6 +8,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyDxUB9qzaCJW8zI0CpAVXf0fOjudTOpRp4",
   authDomain: "axiom-fc174.firebaseapp.com",
+  databaseURL: "https://axiom-fc174-default-rtdb.firebaseio.com",
   projectId: "axiom-fc174",
   storageBucket: "axiom-fc174.firebasestorage.app",
   messagingSenderId: "779507151868",
@@ -15,4 +16,4 @@ const firebaseConfig = {
   measurementId: "G-G554QETJL4"
 };
 
-const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
+const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "AIzaSyDxUB9qzaCJW8zI0CpAVXf0fOjudTOpRp4";
