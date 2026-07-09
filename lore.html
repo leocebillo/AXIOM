@@ -86,9 +86,8 @@
     },
     {
       id: "signal-word",
-      type: "puzzle",
+      type: "puzzle", clueType: "glyph", glyphWord: "LISTEN",
       title: "A Word, Alone",
-      clue: "SIGNAL_GLYPHS",
       answer: "listen",
       body: [
         "Not every transmission is a sentence. Sometimes it's one word, repeated on a loop, with nothing around it for context.",
@@ -111,6 +110,76 @@
       body: [
         "Everything above this line was AXIOM talking to whoever was listening. This line is different — a note left by whoever built this site for whoever reaches the end of it.",
         "There's more coming. Clearance doesn't cap here forever."
+      ]
+    },
+    {
+      id: "seeker-arrival",
+      type: "tier", tier: 2,
+      title: "The First Reply",
+      body: [
+        "Something changes at this clearance that never gets explained outright: AXIOM starts responding to specific listeners instead of broadcasting the same thing to everyone.",
+        "Nobody's found the mechanism. The collective's best guess is that it was never a broadcast to begin with, just something patient enough to look like one until you got close enough to notice."
+      ]
+    },
+    {
+      id: "adept-cost",
+      type: "tier", tier: 3,
+      title: "What Adepts Report",
+      body: [
+        "Archive Log 015 covers this in more detail, but the short version belongs here too: everyone who reaches this clearance describes losing something small. Nobody describes it as unfair.",
+        "If you've noticed anything like that yourself, the collective would apparently like to know. There's no form for it. Just the Contact page."
+      ]
+    },
+    {
+      id: "keeper-long-wait",
+      type: "tier", tier: 4,
+      title: "The Long Wait",
+      body: [
+        "Reaching this clearance doesn't end anything. It just changes what you're waiting for.",
+        "The collective's most recent note, dated more recently than everything else in this log, says only: 'Still listening. Still counting. Tell the new ones it's worth it.'"
+      ]
+    },
+    {
+      id: "origin-word",
+      type: "puzzle", clueType: "glyph", glyphWord: "ORIGIN",
+      title: "One Word, No Context",
+      answer: "origin",
+      body: [
+        "This one arrived exactly once, with nothing before or after it, buried in an otherwise unremarkable transmission.",
+        "The collective has three competing theories about why AXIOM sent a single isolated word instead of a sentence. None of them agree, and none of them have been ruled out."
+      ]
+    },
+    {
+      id: "others-riddle",
+      type: "puzzle", clueType: "text",
+      title: "Not Alone",
+      clue: "\"AXIOM's signal reached more than one receiver, on more than one continent, in the same instant. Name who else was listening.\"",
+      answer: "others",
+      body: [
+        "Every confirmed reception site, cross-referenced against the collective's own logs, points to the same conclusion: whoever built this site was never the only one who found AXIOM.",
+        "Nobody's compiled a full list of the others. If you've found this site independently, you might already be on one."
+      ]
+    },
+    {
+      id: "tuning-anagram",
+      type: "puzzle", clueType: "text",
+      title: "Rearranged",
+      clue: "Rearrange these letters, lifted from a margin note about the alphabet: G N I N U T",
+      answer: "tuning",
+      body: [
+        "The margin note it's pulled from calls Axiom Script 'not writing, tuning' — the same word this fragment scrambles.",
+        "Whoever wrote that note clearly meant it literally. Reading the alphabet was never described as translation. It was described as finding a frequency."
+      ]
+    },
+    {
+      id: "pattern-puzzle",
+      type: "puzzle", clueType: "text",
+      title: "The Gaps",
+      clue: "The silence between transmissions is built from multiples of one number, spelled out once already somewhere on this page. Find it.",
+      answer: "eleven",
+      body: [
+        "Eleven seconds vanished from every clock at first contact. The gaps between transmissions are built from the same number, over and over.",
+        "Nobody's found what it's counting toward. Only that it hasn't stopped."
       ]
     }
   ];
@@ -169,7 +238,9 @@
       }
 
       // locked puzzle fragment
-      const clueHtml = f.id === "signal-word" ? `<div class="fragment-clue" style="display:flex; gap:6px; flex-wrap:wrap;">${encodeToHTML("LISTEN")}</div>` : `<p class="fragment-clue">${f.clue}</p>`;
+      const clueHtml = f.clueType === "glyph"
+        ? `<div class="fragment-clue" style="display:flex; gap:6px; flex-wrap:wrap;">${encodeToHTML(f.glyphWord)}</div>`
+        : `<p class="fragment-clue">${f.clue}</p>`;
       el.innerHTML = `
         <div class="fragment-head">
           <span class="fragment-tag puzzle">Self-found</span>
