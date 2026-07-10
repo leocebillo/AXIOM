@@ -108,9 +108,15 @@
     <div class="feedback" id="authFeedback"></div>
 
     <div class="tier-card" id="tierCard" style="display:none;">
-      <span class="eyebrow" style="margin-bottom:4px;">Current clearance</span>
-      <div class="tier-name" id="tierName">Listener</div>
+      <div class="profile-row">
+        <div class="avatar" id="profileAvatar"></div>
+        <div>
+          <div class="tier-name" id="tierName">Listener</div>
+          <div class="profile-username" id="profileUsername"></div>
+        </div>
+      </div>
       <div class="tier-desc" id="tierDesc">You can hear AXIOM. You can't yet ask it anything.</div>
+      <div class="profile-meta" id="profileMeta"></div>
       <button type="button" id="logoutBtn" class="tab" style="margin-top:14px;">Log out</button>
     </div>
   </section>
@@ -121,6 +127,7 @@
 
 <script src="cipher.js"></script>
 <script src="firebase-config.js"></script>
+<script src="profile.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -148,16 +155,18 @@
     return clean + "@axiom.local";
   }
 
-  const TIERS = {
-    1: { name: "Listener", desc: "You can hear AXIOM. You can't yet ask it anything." },
-    2: { name: "Seeker",   desc: "You've asked. AXIOM is starting to answer." },
-    3: { name: "Adept",    desc: "You understand more of the signal than most who've tried." },
-    4: { name: "Keeper",   desc: "The Archive is open to you." }
-  };
-  function showTier(level) {
-    const t = TIERS[level] || TIERS[1];
-    document.getElementById("tierName").textContent = t.name;
-    document.getElementById("tierDesc").textContent = t.desc;
+  // TIERS is defined in profile.js (shared across pages).
+  function showProfile(userData) {
+    const isCreator = !!userData.isCreator;
+    document.getElementById("tierName").textContent = displayTitle(userData);
+    document.getElementById("tierName").classList.toggle("creator", isCreator);
+    document.getElementById("tierDesc").textContent = displayDesc(userData);
+    document.getElementById("profileUsername").textContent = "@" + userData.username;
+    const avatar = document.getElementById("profileAvatar");
+    avatar.textContent = (userData.username || "?").charAt(0).toUpperCase();
+    avatar.classList.toggle("creator", isCreator);
+    const since = formatMemberSince(userData.createdAt);
+    document.getElementById("profileMeta").textContent = since ? "Listening since " + since : "";
     document.getElementById("tierCard").style.display = "block";
   }
 
@@ -256,10 +265,14 @@
     btn.disabled = true;
     try {
       const cred = await createUserWithEmailAndPassword(auth, usernameToEmail(username), password);
-      await setDoc(doc(db, "users", cred.user.uid), { username, tier: 1, createdAt: Date.now() });
-      fb.textContent = "Profile created. Welcome to the log, " + username + ". Taking you to the Archive...";
+      const isCreator = isCreatorUsername(username);
+      const userData = { username, tier: isCreator ? 4 : 1, isCreator, createdAt: Date.now() };
+      await setDoc(doc(db, "users", cred.user.uid), userData);
+      fb.textContent = isCreator
+        ? "Welcome home. Taking you to the Archive..."
+        : "Profile created. Welcome to the log, " + username + ". Taking you to the Archive...";
       fb.className = "feedback ok";
-      showTier(1);
+      showProfile(userData);
       setProgress(100);
       setTimeout(() => { window.location.href = "archive.html"; }, 1400);
     } catch (err) {
@@ -298,17 +311,17 @@
 
     // Signed in successfully — a Firestore read problem past this point
     // shouldn't be reported as a bad login.
-    let tier = 1;
+    let userData = { username, tier: 1, isCreator: isCreatorUsername(username) };
     try {
       const snap = await getDoc(doc(db, "users", cred.user.uid));
-      if (snap.exists()) tier = snap.data().tier;
+      if (snap.exists()) userData = snap.data();
     } catch (err) {
-      console.warn("Signed in, but couldn't read tier from Firestore:", err.code, err.message);
+      console.warn("Signed in, but couldn't read profile from Firestore:", err.code, err.message);
     }
 
     fb.textContent = "Welcome back, " + username + ". Taking you to the Archive...";
     fb.className = "feedback ok";
-    showTier(tier);
+    showProfile(userData);
     setProgress(100);
     btn.disabled = false;
     setTimeout(() => { window.location.href = "archive.html"; }, 1400);
@@ -330,22 +343,11 @@
             document.getElementById(id).classList.remove("hidden-lock");
             document.getElementById(id).classList.add("revealed");
           });
-          showTier(snap.data().tier);
+          showProfile(snap.data());
           setProgress(100);
         }
       }
     });
-  }
-
-  // TESTING SHORTCUT — open index.html?dev=1 to skip straight to the
-  // registration form without solving the puzzles. Remove this block
-  // (or just stop using the query param) once you're done testing.
-  if (new URLSearchParams(window.location.search).get("dev") === "1") {
-    ["stage2", "stage3", "stage4"].forEach(id => {
-      document.getElementById(id).classList.remove("hidden-lock");
-      document.getElementById(id).classList.add("revealed");
-    });
-    setProgress(100);
   }
 </script>
 
