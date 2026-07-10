@@ -186,6 +186,16 @@
         "Eleven seconds vanished from every clock at first contact. The gaps between transmissions are built from the same number, over and over.",
         "Nobody's found what it's counting toward. Only that it hasn't stopped."
       ]
+    },
+    {
+      id: "static-word",
+      type: "puzzle", clueType: "static", glyphWord: "STATIC",
+      title: "Buried in Noise",
+      answer: "static",
+      body: [
+        "Most of what AXIOM sends arrives clean. This one didn't — it came in underneath a wall of interference, readable only once you found the exact point where the noise thinned out.",
+        "The collective's notes call this kind of fragment a courtesy. AXIOM apparently could have sent it clean. It chose not to."
+      ]
     }
   ];
 
@@ -210,8 +220,32 @@
     }
   }
 
+  // ---- Signal Tuning puzzle: canvas-drawn static that thins out as the
+  // slider approaches a hidden target value, revealing glyphs underneath.
+  const activeTuners = [];
+  let noiseLoopStarted = false;
+  function ensureNoiseLoop() {
+    if (noiseLoopStarted) return;
+    noiseLoopStarted = true;
+    function frame() {
+      activeTuners.forEach(t => {
+        const { ctx, canvas } = t;
+        const w = canvas.width, h = canvas.height;
+        const imgData = ctx.createImageData(w, h);
+        for (let i = 0; i < imgData.data.length; i += 4) {
+          const v = Math.random() * 255;
+          imgData.data[i] = v; imgData.data[i + 1] = v; imgData.data[i + 2] = v; imgData.data[i + 3] = 255;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
   function render() {
     const grid = document.getElementById("fragmentGrid");
+    activeTuners.length = 0; // old canvases are about to be wiped from the DOM
     grid.innerHTML = "";
     FRAGMENTS.forEach(f => {
       const unlocked = fragmentUnlocked(f);
@@ -243,9 +277,23 @@
       }
 
       // locked puzzle fragment
-      const clueHtml = f.clueType === "glyph"
-        ? `<div class="fragment-clue" style="display:flex; gap:6px; flex-wrap:wrap;">${encodeToHTML(f.glyphWord)}</div>`
-        : `<p class="fragment-clue">${f.clue}</p>`;
+      let clueHtml;
+      if (f.clueType === "glyph") {
+        clueHtml = `<div class="fragment-clue" style="display:flex; gap:6px; flex-wrap:wrap;">${encodeToHTML(f.glyphWord)}</div>`;
+      } else if (f.clueType === "static") {
+        clueHtml = `
+          <div class="tuner-wrap">
+            <div class="tuner-stage">
+              <div class="tuner-glyphs">${encodeToHTML(f.glyphWord)}</div>
+              <canvas class="tuner-noise"></canvas>
+            </div>
+            <input type="range" class="tuner-slider" min="0" max="100" value="0" aria-label="Signal tuning for ${f.title}">
+            <div class="tuner-label">Tune until the noise thins out, then read what's underneath</div>
+          </div>`;
+      } else {
+        clueHtml = `<p class="fragment-clue">${f.clue}</p>`;
+      }
+
       el.innerHTML = `
         <div class="fragment-head">
           <span class="fragment-tag puzzle">Self-found</span>
@@ -258,6 +306,24 @@
         </form>
         <div class="feedback"></div>
       `;
+
+      if (f.clueType === "static") {
+        const canvas = el.querySelector(".tuner-noise");
+        const slider = el.querySelector(".tuner-slider");
+        canvas.width = 150; canvas.height = 32; // low-res, scaled up by CSS for a chunky static look
+        const ctx = canvas.getContext("2d");
+        const target = f.tunerTarget != null ? f.tunerTarget : 62; // hidden sweet spot on the 0-100 slider
+        activeTuners.push({ ctx, canvas });
+        ensureNoiseLoop();
+        const updateOpacity = () => {
+          const distance = Math.abs(parseInt(slider.value, 10) - target);
+          const opacity = Math.max(0.04, Math.min(0.95, distance / 45));
+          canvas.style.opacity = opacity;
+        };
+        slider.addEventListener("input", updateOpacity);
+        updateOpacity();
+      }
+
       const form = el.querySelector("form");
       form.addEventListener("submit", async e => {
         e.preventDefault();
