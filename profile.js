@@ -40,3 +40,24 @@ function formatMemberSince(timestampMs) {
     return "";
   }
 }
+
+/* ---------- Badges ---------- */
+const BADGE_DEFS = [
+  { id: "first-contact",   label: "First Contact",    test: u => (u.tier || 0) >= 1 },
+  { id: "seeker",          label: "Seeker Clearance",  test: u => (u.tier || 0) >= 2 },
+  { id: "adept",           label: "Adept Clearance",   test: u => (u.tier || 0) >= 3 },
+  { id: "keeper",          label: "Keeper Clearance",  test: u => (u.tier || 0) >= 4 },
+  { id: "fragment-hunter", label: "Fragment Hunter",   test: u => (u.loreUnlocked || []).length >= 3 },
+  { id: "archivist",       label: "Archivist",         test: u => (u.loreUnlocked || []).length >= 6 },
+  { id: "architect",       label: "The Architect",     test: u => !!u.isCreator }
+];
+
+function computeBadges(userData) {
+  return BADGE_DEFS.filter(b => b.test(userData || {}));
+}
+
+function badgeListHTML(userData) {
+  const badges = computeBadges(userData);
+  if (!badges.length) return "";
+  return badges.map(b => `<span class="badge${userData.isCreator && b.id === 'architect' ? ' badge-creator' : ''}">${b.label}</span>`).join("");
+}
