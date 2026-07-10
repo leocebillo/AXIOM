@@ -17,6 +17,7 @@
     <a href="contact.html">Contact</a>
     <a href="archive.html">Archive</a>
     <a href="lore.html">Lore</a>
+    <a href="listeners.html">Listeners</a>
   </nav>
 </header>
 
@@ -35,6 +36,8 @@
     <div class="term-line" style="animation-delay:0.6s">&gt; origin distance: unresolved</div>
     <div class="term-line" style="animation-delay:1.1s">&gt; designation assigned: AXIOM</div>
     <div class="term-line cyan" style="animation-delay:1.6s">&gt; AXIOM has been transmitting for longer than we've been listening.</div>
+
+    <button type="button" class="ambient-toggle" id="ambientToggle"><span class="ambient-dot"></span>Signal hum: off</button>
 
     <span class="eyebrow" style="margin-top:24px;">Stage 01 — Access</span>
     <h1>Before AXIOM will speak in a tongue you can read, it wants to know if you can wait for it.</h1>
@@ -119,6 +122,7 @@
       </div>
       <div class="tier-desc" id="tierDesc">You can hear AXIOM. You can't yet ask it anything.</div>
       <div class="profile-meta" id="profileMeta"></div>
+      <div class="badge-row" id="profileBadges"></div>
       <button type="button" id="logoutBtn" class="tab" style="margin-top:14px;">Log out</button>
     </div>
   </section>
@@ -169,8 +173,44 @@
     avatar.classList.toggle("creator", isCreator);
     const since = formatMemberSince(userData.createdAt);
     document.getElementById("profileMeta").textContent = since ? "Listening since " + since : "";
+    document.getElementById("profileBadges").innerHTML = badgeListHTML(userData);
     document.getElementById("tierCard").style.display = "block";
   }
+
+  // ---- ambient signal hum (generated brown noise, no audio file needed) ----
+  let audioCtx = null, ambientSource = null, ambientOn = false;
+  function startAmbient() {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02;
+      data[i] = lastOut * 3.5;
+    }
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 500;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.06;
+    source.connect(filter).connect(gain).connect(audioCtx.destination);
+    source.start();
+    ambientSource = source;
+  }
+  function stopAmbient() {
+    if (ambientSource) { ambientSource.stop(); ambientSource = null; }
+  }
+  document.getElementById("ambientToggle").addEventListener("click", function () {
+    ambientOn = !ambientOn;
+    if (ambientOn) startAmbient(); else stopAmbient();
+    this.classList.toggle("on", ambientOn);
+    this.innerHTML = `<span class="ambient-dot"></span>Signal hum: ${ambientOn ? "on" : "off"}`;
+  });
 
   // ---- render the alphabet sheet ----
   const grid = document.getElementById("glyphGrid");
