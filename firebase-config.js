@@ -13,4 +13,4 @@ const firebaseConfig = {
   measurementId: "G-G554QETJL4"
 };
 
-const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "AIzaSyDxUB9qzaCJW8zI0CpAVXf0fOjudTOpRp4";
+const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
