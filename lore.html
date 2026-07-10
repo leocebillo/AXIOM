@@ -34,6 +34,7 @@
       </div>
     </div>
     <div class="desc" id="clearanceDesc"></div>
+    <button type="button" id="logoutBtn" class="tab" style="margin-top:14px;">Log out</button>
   </div>
 
   <div class="config-warning" id="loggedOutNote" style="display:none;">
@@ -50,7 +51,7 @@
 <script src="profile.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   // TIERS, displayTitle, displayDesc are in profile.js (shared).
@@ -320,6 +321,10 @@
     updateProfileStrip(null);
     render();
   }
+
+  document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+    if (FIREBASE_CONFIGURED && auth) await signOut(auth);
+  });
 </script>
 
 </body>
