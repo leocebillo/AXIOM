@@ -1,8 +1,5 @@
 /* ============================================================
-   FIREBASE CONFIG — replace these placeholder values with your
-   own project's config from the Firebase console:
-   Project settings → General → Your apps → SDK setup and config
-
+   FIREBASE CONFIG:
    Shared by index.html and archive.html. Edit only here.
    ============================================================ */
 const firebaseConfig = {
