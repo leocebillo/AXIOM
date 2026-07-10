@@ -25,17 +25,19 @@
   <h1>Everything that didn't make it into the official log.</h1>
   <p class="sub">Some of this fills in on its own as your clearance rises. The rest is only found by whoever bothers to look — solve what's in front of you.</p>
 
-  <!-- TEMPORARY: dev tier switcher, same as Archive, for testing before accounts are live -->
-  <div class="dev-panel">
-    <span class="label">⚠ Dev calibration — for testing before accounts are live</span>
-    Preview as clearance:
-    <select id="devTier" onchange="setDevTier(parseInt(this.value,10))">
-      <option value="0">No account</option>
-      <option value="1">1 — Listener</option>
-      <option value="2">2 — Seeker</option>
-      <option value="3">3 — Adept</option>
-      <option value="4">4 — Keeper</option>
-    </select>
+  <div class="clearance-strip" id="clearanceStrip" style="display:none;">
+    <div class="profile-row">
+      <div class="avatar" id="profileAvatar"></div>
+      <div>
+        <div class="name" id="clearanceName">—</div>
+        <div class="profile-username" id="profileUsername"></div>
+      </div>
+    </div>
+    <div class="desc" id="clearanceDesc"></div>
+  </div>
+
+  <div class="config-warning" id="loggedOutNote" style="display:none;">
+    ⚠ You're not logged in — auto-logged fragments stay hidden, but the self-found puzzles below still work. <a href="index.html">Head to Main</a> to register.
   </div>
 
   <div class="fragment-grid" id="fragmentGrid"></div>
@@ -45,12 +47,14 @@
 
 <script src="cipher.js"></script>
 <script src="firebase-config.js"></script>
+<script src="profile.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const TIER_NAMES = { 1: "Listener", 2: "Seeker", 3: "Adept", 4: "Keeper" };
+  // TIERS, displayTitle, displayDesc are in profile.js (shared).
+  const TIER_NAMES = Object.fromEntries(Object.entries(TIERS).map(([k, v]) => [k, v.name]));
 
   /* ============================================================
      LORE FRAGMENTS
@@ -274,20 +278,28 @@
     });
   }
 
-  window.setDevTier = function (tier) {
-    currentTier = tier;
-    render();
-  };
+  function updateProfileStrip(userData) {
+    const strip = document.getElementById("clearanceStrip");
+    const loggedOutNote = document.getElementById("loggedOutNote");
+    if (userData) {
+      strip.style.display = "flex";
+      loggedOutNote.style.display = "none";
+      const isCreator = !!userData.isCreator;
+      document.getElementById("clearanceName").textContent = displayTitle(userData);
+      document.getElementById("clearanceName").classList.toggle("creator", isCreator);
+      document.getElementById("clearanceDesc").textContent = displayDesc(userData);
+      document.getElementById("profileUsername").textContent = "@" + userData.username;
+      const avatar = document.getElementById("profileAvatar");
+      avatar.textContent = (userData.username || "?").charAt(0).toUpperCase();
+      avatar.classList.toggle("creator", isCreator);
+    } else {
+      strip.style.display = "none";
+      loggedOutNote.style.display = "block";
+    }
+  }
 
-  // ---- init ----
-  const params = new URLSearchParams(window.location.search);
-  const urlTier = params.get("tier");
-
-  if (urlTier !== null) {
-    document.getElementById("devTier").value = urlTier;
-    currentTier = parseInt(urlTier, 10);
-    render();
-  } else if (FIREBASE_CONFIGURED) {
+  // ---- init: real Firebase session only ----
+  if (FIREBASE_CONFIGURED) {
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
@@ -295,15 +307,17 @@
       if (user) {
         currentUid = user.uid;
         const snap = await getDoc(doc(db, "users", user.uid));
-        if (snap.exists()) {
-          currentTier = snap.data().tier || 0;
-          firestoreUnlocked = snap.data().loreUnlocked || [];
-        }
-        document.getElementById("devTier").parentElement.style.opacity = "0.5";
+        const userData = snap.exists() ? snap.data() : { username: "listener", tier: 1 };
+        currentTier = userData.tier || 0;
+        firestoreUnlocked = userData.loreUnlocked || [];
+        updateProfileStrip(userData);
+      } else {
+        updateProfileStrip(null);
       }
       render();
     });
   } else {
+    updateProfileStrip(null);
     render();
   }
 </script>
