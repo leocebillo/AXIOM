@@ -280,3 +280,58 @@ footer{text-align:center; padding:40px 24px 60px; font-size:11px; color:var(--ph
   background:var(--amber); cursor:pointer; box-shadow:0 0 8px rgba(232,163,61,0.6);
 }
 .tuner-label{font-size:10px; color:var(--phosphor-dim); letter-spacing:0.08em; text-transform:uppercase; margin-top:8px;}
+
+/* ---------- Badges ---------- */
+.badge-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+.badge{
+  font-size:10px; letter-spacing:0.05em; text-transform:uppercase;
+  padding:5px 10px; border-radius:12px; color:var(--cyan);
+  background:rgba(110,231,216,0.08); border:1px solid rgba(110,231,216,0.25);
+}
+.badge-creator{color:var(--amber); background:rgba(232,163,61,0.1); border-color:rgba(232,163,61,0.35);}
+
+/* ---------- Listeners page ---------- */
+.roster{margin-top:32px; display:flex; flex-direction:column; gap:12px;}
+.roster-card{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  border:1px solid rgba(110,231,216,0.15); border-radius:6px; background:var(--panel); padding:16px 18px;
+}
+.roster-card.creator{border-color:rgba(232,163,61,0.35); background:linear-gradient(135deg, rgba(232,163,61,0.06), var(--panel));}
+.roster-info{flex:1; min-width:160px;}
+.roster-name{font-family:var(--serif); font-style:italic; font-size:17px; color:#fff;}
+.roster-name.creator{color:var(--amber);}
+.roster-meta{font-size:11px; color:var(--phosphor-dim); margin-top:2px;}
+
+/* ---------- Ambient sound toggle ---------- */
+.ambient-toggle{
+  display:inline-flex; align-items:center; gap:8px; background:transparent;
+  border:1px solid rgba(110,231,216,0.25); color:var(--phosphor-dim);
+  font-family:var(--mono); font-size:11px; letter-spacing:0.05em; text-transform:uppercase;
+  padding:8px 14px; border-radius:20px; cursor:pointer; margin-top:14px;
+}
+.ambient-toggle:hover{color:var(--cyan); border-color:rgba(110,231,216,0.4);}
+.ambient-toggle.on{color:var(--cyan); background:rgba(110,231,216,0.08);}
+.ambient-dot{width:6px; height:6px; border-radius:50%; background:var(--phosphor-dim);}
+.ambient-toggle.on .ambient-dot{background:var(--cyan); box-shadow:0 0 6px rgba(110,231,216,0.7); animation:pulse 2s infinite;}
+
+/* ---------- Reorder puzzle ---------- */
+.reorder-wrap{margin:12px 0 16px;}
+.reorder-assembled{display:flex; gap:6px; min-height:38px; margin-bottom:10px; flex-wrap:wrap; align-items:center;}
+.reorder-slot{width:32px; height:32px; border:1px dashed rgba(110,231,216,0.25); border-radius:4px; display:flex; align-items:center; justify-content:center;}
+.reorder-tiles{display:flex; gap:8px; flex-wrap:wrap;}
+.reorder-tile{
+  background:var(--void-2); border:1px solid rgba(110,231,216,0.25); border-radius:4px;
+  padding:6px; cursor:pointer; transition:transform 0.1s, border-color 0.15s;
+}
+.reorder-tile:hover{border-color:var(--cyan); transform:translateY(-2px);}
+.reorder-tile.placed{opacity:0.25; pointer-events:none;}
+.reorder-tile.shake{animation:shake 0.3s;}
+@keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 560px){
+  header{flex-direction:column; align-items:flex-start; gap:10px; padding:14px 18px;}
+  nav{gap:14px; flex-wrap:wrap;}
+  .stage{padding:32px 18px 80px;}
+  .roster-card{flex-direction:column; align-items:flex-start;}
+}
