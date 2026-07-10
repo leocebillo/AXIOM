@@ -34,6 +34,7 @@
       </div>
     </div>
     <div class="desc" id="clearanceDesc"></div>
+    <button type="button" id="logoutBtn" class="tab" style="margin-top:14px;">Log out</button>
   </div>
 
   <div class="config-warning" id="loggedOutNote" style="display:none;">
@@ -50,7 +51,7 @@
 <script src="profile.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   // TIERS, displayTitle, displayDesc, formatMemberSince are in profile.js (shared).
@@ -271,11 +272,12 @@
   }
 
   // ---- init: real Firebase session only ----
+  let authRef;
   if (FIREBASE_CONFIGURED) {
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    authRef = getAuth(app);
     const db = getFirestore(app);
-    onAuthStateChanged(auth, async user => {
+    onAuthStateChanged(authRef, async user => {
       if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
         showProfileAndRender(snap.exists() ? snap.data() : { username: "listener", tier: 1 });
@@ -286,6 +288,10 @@
   } else {
     showProfileAndRender(null);
   }
+
+  document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+    if (FIREBASE_CONFIGURED && authRef) await signOut(authRef);
+  });
 </script>
 
 </body>
