@@ -83,29 +83,31 @@
   <!-- STAGE 4: ACCOUNT -->
   <section class="stage-block hidden-lock" id="stage4">
     <span class="eyebrow">Stage 05 — Registration</span>
-    <h1 style="font-size:24px;">You're not the first to get this far. You won't be the last.</h1>
-    <p class="note">Create a listener profile. AXIOM keeps track of who's paying attention.</p>
+    <h1 style="font-size:24px;" id="stage4Heading">You're not the first to get this far. You won't be the last.</h1>
+    <p class="note" id="stage4Note">Create a listener profile. AXIOM keeps track of who's paying attention.</p>
 
     <div id="configWarning" class="config-warning" style="display:none;">
       ⚠ Backend not connected yet. Accounts won't save until Firebase config is added — see README.md.
     </div>
 
-    <div class="tabs">
-      <button class="tab active" id="tabSignup" onclick="switchTab('signup')" type="button">Create profile</button>
-      <button class="tab" id="tabLogin" onclick="switchTab('login')" type="button">I already have one</button>
-    </div>
+    <div id="authGate">
+      <div class="tabs">
+        <button class="tab active" id="tabSignup" onclick="switchTab('signup')" type="button">Create profile</button>
+        <button class="tab" id="tabLogin" onclick="switchTab('login')" type="button">I already have one</button>
+      </div>
 
-    <form class="auth-form active" id="signupForm">
-      <input type="text" id="suUsername" placeholder="Choose a listener name" required>
-      <input type="password" id="suPassword" placeholder="Choose a passphrase (6+ characters)" required minlength="6">
-      <button type="submit" id="suBtn">Register as Listener</button>
-    </form>
-    <form class="auth-form" id="loginForm">
-      <input type="text" id="liUsername" placeholder="Listener name" required>
-      <input type="password" id="liPassword" placeholder="Passphrase" required>
-      <button type="submit" id="liBtn">Log in</button>
-    </form>
-    <div class="feedback" id="authFeedback"></div>
+      <form class="auth-form active" id="signupForm">
+        <input type="text" id="suUsername" placeholder="Choose a listener name" required>
+        <input type="password" id="suPassword" placeholder="Choose a passphrase (6+ characters)" required minlength="6">
+        <button type="submit" id="suBtn">Register as Listener</button>
+      </form>
+      <form class="auth-form" id="loginForm">
+        <input type="text" id="liUsername" placeholder="Listener name" required>
+        <input type="password" id="liPassword" placeholder="Passphrase" required>
+        <button type="submit" id="liBtn">Log in</button>
+      </form>
+      <div class="feedback" id="authFeedback"></div>
+    </div>
 
     <div class="tier-card" id="tierCard" style="display:none;">
       <div class="profile-row">
@@ -330,6 +332,9 @@
   document.getElementById("logoutBtn")?.addEventListener("click", async () => {
     if (FIREBASE_CONFIGURED) await signOut(auth);
     document.getElementById("tierCard").style.display = "none";
+    document.getElementById("authGate").style.display = "block";
+    document.getElementById("stage4Heading").textContent = "You're not the first to get this far. You won't be the last.";
+    document.getElementById("stage4Note").textContent = "Create a listener profile. AXIOM keeps track of who's paying attention.";
     document.getElementById("authFeedback").textContent = "Logged out.";
   });
 
@@ -343,6 +348,9 @@
             document.getElementById(id).classList.remove("hidden-lock");
             document.getElementById(id).classList.add("revealed");
           });
+          document.getElementById("authGate").style.display = "none";
+          document.getElementById("stage4Heading").textContent = "Welcome back. AXIOM already knows you.";
+          document.getElementById("stage4Note").textContent = "You're still logged in from last time — no need to do that again.";
           showProfile(snap.data());
           setProgress(100);
         }
