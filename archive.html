@@ -25,25 +25,19 @@
   <h1>Everything AXIOM has said, in the language it said it in.</h1>
   <p class="sub">Every entry arrives as Axiom Script first. Use the alphabet sheet on the Main page, or press "Decode" if you'd rather AXIOM do the translating for you — though the field notes suggest doing it yourself matters.</p>
 
-  <!-- TEMPORARY: dev tier switcher, used only when not logged in or Firebase isn't configured yet. -->
-  <div class="dev-panel">
-    <span class="label">⚠ Dev calibration — for testing before accounts are live</span>
-    Preview as clearance:
-    <select id="devTier" onchange="setTier(parseInt(this.value,10))">
-      <option value="0">No account</option>
-      <option value="1">1 — Listener</option>
-      <option value="2">2 — Seeker</option>
-      <option value="3">3 — Adept</option>
-      <option value="4">4 — Keeper</option>
-    </select>
-  </div>
-
   <div class="clearance-strip" id="clearanceStrip" style="display:none;">
-    <div>
-      <span class="eyebrow" style="margin-bottom:2px;">Your clearance</span>
-      <div class="name" id="clearanceName">—</div>
+    <div class="profile-row">
+      <div class="avatar" id="profileAvatar"></div>
+      <div>
+        <div class="name" id="clearanceName">—</div>
+        <div class="profile-username" id="profileUsername"></div>
+      </div>
     </div>
     <div class="desc" id="clearanceDesc"></div>
+  </div>
+
+  <div class="config-warning" id="loggedOutNote" style="display:none;">
+    ⚠ You're not logged in, so everything below is locked. <a href="index.html">Head to Main</a> to solve the puzzles and register.
   </div>
 
   <div class="log" id="log"></div>
@@ -53,17 +47,13 @@
 
 <script src="cipher.js"></script>
 <script src="firebase-config.js"></script>
+<script src="profile.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const TIERS = {
-    1: { name: "Listener", desc: "You can hear AXIOM." },
-    2: { name: "Seeker",   desc: "AXIOM is starting to answer you." },
-    3: { name: "Adept",    desc: "You understand more than most who've tried." },
-    4: { name: "Keeper",   desc: "The Archive is fully open to you." }
-  };
+  // TIERS, displayTitle, displayDesc, formatMemberSince are in profile.js (shared).
 
   const ENTRIES = [
     {
@@ -258,41 +248,43 @@
     });
   }
 
-  window.setTier = function (tier) {
+  function showProfileAndRender(userData) {
     const strip = document.getElementById("clearanceStrip");
-    if (tier > 0) {
+    const loggedOutNote = document.getElementById("loggedOutNote");
+    if (userData) {
       strip.style.display = "flex";
-      document.getElementById("clearanceName").textContent = TIERS[tier].name;
-      document.getElementById("clearanceDesc").textContent = TIERS[tier].desc;
+      loggedOutNote.style.display = "none";
+      const isCreator = !!userData.isCreator;
+      document.getElementById("clearanceName").textContent = displayTitle(userData);
+      document.getElementById("clearanceName").classList.toggle("creator", isCreator);
+      document.getElementById("clearanceDesc").textContent = displayDesc(userData);
+      document.getElementById("profileUsername").textContent = "@" + userData.username;
+      const avatar = document.getElementById("profileAvatar");
+      avatar.textContent = (userData.username || "?").charAt(0).toUpperCase();
+      avatar.classList.toggle("creator", isCreator);
+      renderLog(userData.tier || 0);
     } else {
       strip.style.display = "none";
+      loggedOutNote.style.display = "block";
+      renderLog(0);
     }
-    renderLog(tier);
-  };
+  }
 
-  // ---- init: dev override via URL, else Firebase session, else dev panel default ----
-  const params = new URLSearchParams(window.location.search);
-  const urlTier = params.get("tier");
-
-  if (urlTier !== null) {
-    document.getElementById("devTier").value = urlTier;
-    setTier(parseInt(urlTier, 10));
-  } else if (FIREBASE_CONFIGURED) {
+  // ---- init: real Firebase session only ----
+  if (FIREBASE_CONFIGURED) {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     onAuthStateChanged(auth, async user => {
       if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
-        const tier = snap.exists() ? snap.data().tier : 0;
-        document.getElementById("devTier").parentElement.style.opacity = "0.5";
-        setTier(tier);
+        showProfileAndRender(snap.exists() ? snap.data() : { username: "listener", tier: 1 });
       } else {
-        setTier(0);
+        showProfileAndRender(null);
       }
     });
   } else {
-    setTier(0);
+    showProfileAndRender(null);
   }
 </script>
 
