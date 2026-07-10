@@ -17,6 +17,7 @@
     <a href="contact.html">Contact</a>
     <a href="archive.html">Archive</a>
     <a href="lore.html" class="active">Lore</a>
+    <a href="listeners.html">Listeners</a>
   </nav>
 </header>
 
@@ -196,6 +197,24 @@
         "Most of what AXIOM sends arrives clean. This one didn't — it came in underneath a wall of interference, readable only once you found the exact point where the noise thinned out.",
         "The collective's notes call this kind of fragment a courtesy. AXIOM apparently could have sent it clean. It chose not to."
       ]
+    },
+    {
+      id: "reorder-word",
+      type: "puzzle", clueType: "reorder", glyphWord: "PATTERN",
+      title: "Out of Order",
+      body: [
+        "This one arrived shattered — the same glyphs as every other transmission, just scattered instead of sequenced. Reconstructing it by hand was apparently the point.",
+        "The collective's leading theory: AXIOM wanted to know whether anyone would bother putting it back together instead of asking for a clean copy."
+      ]
+    },
+    {
+      id: "seeker-badge-note",
+      type: "tier", tier: 2,
+      title: "Proof, Not Performance",
+      body: [
+        "Archive Log 022 covers the reasoning in more detail, but the short version: badges aren't for showing off. They're for the next listener who finds this site and needs to know someone else actually made it this far.",
+        "If that's you right now, reading this — you're the proof for whoever comes next."
+      ]
     }
   ];
 
@@ -290,21 +309,30 @@
             <input type="range" class="tuner-slider" min="0" max="100" value="0" aria-label="Signal tuning for ${f.title}">
             <div class="tuner-label">Tune until the noise thins out, then read what's underneath</div>
           </div>`;
+      } else if (f.clueType === "reorder") {
+        clueHtml = `
+          <div class="reorder-wrap">
+            <div class="reorder-assembled" data-slots="${f.glyphWord.length}"></div>
+            <div class="reorder-tiles"></div>
+            <div class="tuner-label">Click the glyphs in the order they belong — the shapes came in scrambled</div>
+          </div>`;
       } else {
         clueHtml = `<p class="fragment-clue">${f.clue}</p>`;
       }
 
+      const showAnswerForm = f.clueType !== "reorder";
       el.innerHTML = `
         <div class="fragment-head">
           <span class="fragment-tag puzzle">Self-found</span>
         </div>
         <div class="fragment-title">${"█".repeat(f.title.length)}</div>
         ${clueHtml}
+        ${showAnswerForm ? `
         <form class="answer-row" data-fragment="${f.id}">
           <input type="text" placeholder="Your answer" autocomplete="off" aria-label="Answer for ${f.title}">
           <button type="submit">Decode</button>
         </form>
-        <div class="feedback"></div>
+        <div class="feedback"></div>` : `<div class="feedback"></div>`}
       `;
 
       if (f.clueType === "static") {
@@ -324,8 +352,46 @@
         updateOpacity();
       }
 
+      if (f.clueType === "reorder") {
+        const letters = f.glyphWord.split("");
+        const shuffled = [...letters].sort(() => Math.random() - 0.5);
+        const tilesEl = el.querySelector(".reorder-tiles");
+        const slotsEl = el.querySelector(".reorder-assembled");
+        const fb = el.querySelector(".feedback");
+        for (let i = 0; i < letters.length; i++) {
+          const slot = document.createElement("div");
+          slot.className = "reorder-slot";
+          slotsEl.appendChild(slot);
+        }
+        let nextIndex = 0;
+        shuffled.forEach(letter => {
+          const tile = document.createElement("button");
+          tile.type = "button";
+          tile.className = "reorder-tile";
+          tile.innerHTML = glyphMarkup(letter);
+          tile.addEventListener("click", async () => {
+            if (letter === letters[nextIndex]) {
+              slotsEl.children[nextIndex].innerHTML = glyphMarkup(letter);
+              tile.classList.add("placed");
+              nextIndex++;
+              if (nextIndex === letters.length) {
+                sessionSolved.add(f.id);
+                fb.textContent = "Reassembled. Logged.";
+                fb.className = "feedback ok";
+                await persistSolve(f.id);
+                setTimeout(render, 900);
+              }
+            } else {
+              tile.classList.add("shake");
+              setTimeout(() => tile.classList.remove("shake"), 300);
+            }
+          });
+          tilesEl.appendChild(tile);
+        });
+      }
+
       const form = el.querySelector("form");
-      form.addEventListener("submit", async e => {
+      if (form) form.addEventListener("submit", async e => {
         e.preventDefault();
         const input = form.querySelector("input");
         const fb = el.querySelector(".feedback");
